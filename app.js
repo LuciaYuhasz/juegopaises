@@ -35,5 +35,3 @@ app.listen(PORT, () => {
     ---ranking.json*/
 
 
-//      netstat -ano | findstr :3000
-///     taskkill /PID 2640 /F 
