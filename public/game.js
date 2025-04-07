@@ -52,8 +52,10 @@ document.getElementById('startGameButton').addEventListener('click', () => {
 
             data.options.forEach(option => {
                 const li = document.createElement('li');
+                li.classList.add("list-group-item", "border-0", "p-1");
                 const button = document.createElement('button');
                 button.textContent = option;
+                button.classList.add("btn", "btn-outline-primary", "w-100", "mb-2");
 
 
                 button.addEventListener('click', () => submitAnswer(option.toString()));//hacer metodo sub
