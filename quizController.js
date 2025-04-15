@@ -11,6 +11,28 @@ let gameState = {
 };
 
 
+//implementacion de catch 
+let cachedCountries = null;
+let lastFetchTime = null;
+
+const fetchCountries = async () => {
+    const now = Date.now();
+    const cacheDuration = 24 * 60 * 60 * 1000; // 24 horas
+
+    if (cachedCountries && (now - lastFetchTime) < cacheDuration) {
+        console.log("✅ Usando países cacheados.");
+        return cachedCountries;
+    }
+
+    console.log("🌐 Llamando a la API de países...");
+    const response = await axios.get('https://restcountries.com/v3.1/all');
+    cachedCountries = response.data;
+    lastFetchTime = now;
+    return cachedCountries;
+};
+
+
+
 const getQuestion = async (req, res) => {
     try {
         // Si es la primera pregunta, inicializa el juego
@@ -27,21 +49,27 @@ const getQuestion = async (req, res) => {
             return res.status(400).json({ message: 'El juego ha terminado. Ve a /api/end.' });
         }
 
-        // Obtener datos de la API
-        const response = await axios.get('https://restcountries.com/v3.1/all');
-        const countries = response.data;
+        // Obtener datos de la API chacheado
+        const countries = await fetchCountries();
+        // Excluir países ya utilizados
+        const usedCountries = gameState.questions.map(q => q.correctAnswer);
+        let country;
+        do {
+            country = countries[Math.floor(Math.random() * countries.length)];
+        } while (usedCountries.includes(country.name.common));
 
         // Seleccionar pregunta al azar
         const types = ['capital', 'flag', 'borders'];
         const type = types[Math.floor(Math.random() * types.length)];
-        const country = countries[Math.floor(Math.random() * countries.length)];
+
 
         // Validar que los datos del país sean completos
-        if (!country || !country.name || !country.name.common || (type === 'capital' && !country.capital)) {
+        if (!country || !country.name || !country.name.common ||
+            (type === 'capital' && !country.capital) ||
+            (type === 'flag' && (!country.flags || !country.flags.png))) {
             console.error("Datos de país inválidos o incompletos:", country);
             return res.status(500).json({ error: 'Error al obtener los datos del país.' });
         }
-
         let question, correctAnswer, options;
 
         // Generar pregunta según el tipo seleccionado
